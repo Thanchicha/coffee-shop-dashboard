@@ -10,7 +10,7 @@
 | Total Revenue | `v_dashboard_summary.total_revenue` (เฉพาะออเดอร์ `paid`) |
 | Total Orders | `v_dashboard_summary.total_orders` |
 | Total Customers | `v_dashboard_summary.total_customers` |
-| Sales Analytics | `v_sales_daily` — ยอดขายรายวัน เลือกดู 7 / 30 / 90 วัน |
+| Sales Analytics | `v_sales_daily` — ยอดขายรายวัน 30 วันล่าสุด |
 | Top 5 Products | `v_top_products` — เรียงตามจำนวนที่ขายได้ |
 | Recent Orders | `v_recent_orders` — 10 ออเดอร์ล่าสุด (ไม่รวมวันที่ในอนาคต) |
 
@@ -24,6 +24,5 @@ npm install
 cp .env.example .env.local   # ใส่ Project URL และ anon/publishable key
 npm run dev
 ```
-ถ้ายังไม่ได้ใส่ค่าใน `.env.local` เว็บจะแสดงข้อมูลตัวอย่าง (demo mode)
 
 ภาพถ่ายจาก [Unsplash](https://unsplash.com)

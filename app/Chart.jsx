@@ -1,8 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 
-const RANGES = [7, 30, 90];
-const P = { l: 46, r: 14, t: 18, b: 28 };
+const P = { l: 52, r: 16, t: 18, b: 30 };
 
 function smooth(pts) {
   let d = `M${pts[0][0]},${pts[0][1]}`;
@@ -17,8 +16,7 @@ const fmtDay = (s, long) => new Date(s).toLocaleDateString("th-TH", long ? { wee
 
 export default function Chart({ data }) {
   const box = useRef(null);
-  const [size, setSize] = useState({ w: 640, h: 240 });
-  const [range, setRange] = useState(30);
+  const [size, setSize] = useState(null); // measured before first draw, so the chart never paints at a wrong width
   const [hi, setHi] = useState(null);
 
   useEffect(() => {
@@ -27,55 +25,35 @@ export default function Chart({ data }) {
     return () => ro.disconnect();
   }, []);
 
-  const rows = data.slice(-range);
-  const total = rows.reduce((a, r) => a + r.revenue, 0);
-  const prev = data.slice(-range * 2, -range).reduce((a, r) => a + r.revenue, 0);
-  const growth = prev ? ((total - prev) / prev) * 100 : null;
-
-  const { w: W, h: H } = size;
-  const max = Math.max(...rows.map((d) => d.revenue)) * 1.12;
-  const x = (i) => P.l + (i * (W - P.l - P.r)) / Math.max(1, rows.length - 1);
+  const total = data.reduce((a, r) => a + r.revenue, 0);
+  const { w: W, h: H } = size || { w: 0, h: 0 };
+  const max = Math.max(...data.map((d) => d.revenue)) * 1.12;
+  const x = (i) => P.l + (i * (W - P.l - P.r)) / Math.max(1, data.length - 1);
   const y = (v) => P.t + (1 - v / max) * (H - P.t - P.b);
-  const line = smooth(rows.map((d, i) => [x(i), y(d.revenue)]));
-  const area = `${line} L${x(rows.length - 1)},${H - P.b} L${x(0)},${H - P.b} Z`;
-  const every = Math.ceil(rows.length / 6);
-  const h = hi !== null && rows[hi] ? rows[hi] : null;
+  const line = smooth(data.map((d, i) => [x(i), y(d.revenue)]));
+  const area = `${line} L${x(data.length - 1)},${H - P.b} L${x(0)},${H - P.b} Z`;
+  const every = Math.ceil(data.length / Math.max(2, Math.min(6, Math.floor(W / 80)))); // ~80px per date label
+  const h = hi !== null && data[hi] ? data[hi] : null;
 
   return (
     <div className="chart">
-      <div className="chart-head">
-        <div>
-          <p className="eyebrow">ยอดขายรายวัน · Sales</p>
-          <p className="chart-total">
-            <span className="num">{baht(total)}</span>
-            {growth !== null && (
-              <span className={"delta " + (growth >= 0 ? "up" : "down")}>
-                {growth >= 0 ? "↑" : "↓"} {Math.abs(growth).toFixed(1)}%
-                <em> เทียบ {range} วันก่อนหน้า</em>
-              </span>
-            )}
-          </p>
-        </div>
-        <div className="seg" role="tablist" aria-label="ช่วงเวลา">
-          {RANGES.map((r) => (
-            <button key={r} role="tab" aria-selected={r === range} onClick={() => { setRange(r); setHi(null); }}>{r} วัน</button>
-          ))}
-        </div>
+      <div className="panel-head">
+        <h2>ยอดขายรายวัน <span>30 วันล่าสุด</span></h2>
+        <p className="chart-total">รวม <b>{baht(total)}</b></p>
       </div>
 
       <div className="plot" ref={box}>
-        <svg width={W} height={H} role="img" aria-label={`ยอดขายรายวัน ${range} วันล่าสุด`}
+        {size && <svg width={W} height={H} role="img" aria-label="กราฟยอดขายรายวัน 30 วันล่าสุด"
           onMouseLeave={() => setHi(null)}
           onMouseMove={(e) => {
             const r = e.currentTarget.getBoundingClientRect();
-            const i = Math.round(((e.clientX - r.left - P.l) / (W - P.l - P.r)) * (rows.length - 1));
-            setHi(Math.max(0, Math.min(rows.length - 1, i)));
+            const i = Math.round(((e.clientX - r.left - P.l) / (W - P.l - P.r)) * (data.length - 1));
+            setHi(Math.max(0, Math.min(data.length - 1, i)));
           }}>
           <defs>
             <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="#d4b07a" stopOpacity=".38" />
-              <stop offset=".7" stopColor="#d4b07a" stopOpacity=".05" />
-              <stop offset="1" stopColor="#d4b07a" stopOpacity="0" />
+              <stop offset="0" stopColor="#e0bd85" stopOpacity=".35" />
+              <stop offset="1" stopColor="#e0bd85" stopOpacity="0" />
             </linearGradient>
           </defs>
           {[0, 0.5, 1].map((t) => (
@@ -84,22 +62,22 @@ export default function Chart({ data }) {
               <text x={P.l - 10} y={y(t * max) + 4} textAnchor="end" className="ax">{t ? (t * max / 1000).toFixed(1) + "k" : "0"}</text>
             </g>
           ))}
-          {rows.map((d, i) => (rows.length - 1 - i) % every === 0 && (
+          {data.map((d, i) => (data.length - 1 - i) % every === 0 && (
             <text key={d.day} x={x(i)} y={H - 6} textAnchor="middle" className="ax">{fmtDay(d.day)}</text>
           ))}
           <path d={area} fill="url(#gold)" />
-          <path d={line} className="curve" key={range} />
+          <path d={line} className="curve" />
           {h && (
             <g>
               <line x1={x(hi)} x2={x(hi)} y1={P.t} y2={H - P.b} className="cursor" />
               <circle cx={x(hi)} cy={y(h.revenue)} r="5" className="dot" />
             </g>
           )}
-        </svg>
+        </svg>}
         {h && (
           <div className="tooltip" style={{ left: Math.min(Math.max(x(hi), 80), W - 80), top: y(h.revenue) - 14 }}>
             <span>{fmtDay(h.day, true)}</span>
-            <b className="num">{baht(h.revenue)}</b>
+            <b>{baht(h.revenue)}</b>
             <span>{h.orders} ออเดอร์</span>
           </div>
         )}

@@ -43,8 +43,4 @@ alter table customers   enable row level security;
 alter table products    enable row level security;
 alter table orders      enable row level security;
 alter table order_items enable row level security;
--- Public menu (name / category / price only) for the section below the dashboard.
-create or replace view v_menu as
-select name, category, unit_price from products order by category, unit_price desc;
-
-grant select on v_dashboard_summary, v_sales_daily, v_top_products, v_recent_orders, v_menu to anon;
+grant select on v_dashboard_summary, v_sales_daily, v_top_products, v_recent_orders to anon;
