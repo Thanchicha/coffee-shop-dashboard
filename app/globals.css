@@ -4,6 +4,7 @@
   --gold:#e0bd85; --gold-2:#c49a5e;
   --ink:#fbf6ee; --ink-2:#e2d7c6; --ink-3:#b9ab96;
   --paid:#9fd49a; --pending:#f2c66d; --cancelled:#f0a397;
+  --f-latin:"Inter"; --f-thai:"IBM Plex Sans Thai Looped"; --f-logo:"Cormorant Garamond";
   --font:var(--f-latin),var(--f-thai),system-ui,sans-serif; /* digits & Latin from Inter, Thai from Plex Looped */
   --r:16px;
 }
